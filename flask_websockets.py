@@ -15,6 +15,11 @@ __version__ = '1.0.0'
 
 
 def create_logger():
+    """
+    Creates a logger.
+    The logger currently always uses the level :data:`~logging.DEBUG` and
+    the :data:`flask.logging.default_handler`.
+    """
     import logging
     from flask.logging import default_handler
 
@@ -29,9 +34,12 @@ log.debug('Using Flask-Websockets version %s', __version__)
 
 
 class WebSockets:
+    """
+    """
+
     def __init__(self, app=None, match_one=False, patch_app_run=False):
         """
-        The Flask-Websockets extensions.
+        The Flask-Websockets extension.
         """
         self.match_one = match_one
         self.patch_app_run = patch_app_run
@@ -45,22 +53,30 @@ class WebSockets:
             self.init_app(app)
 
     def init_app(self, app):
+        """
+        """
         if self.patch_app_run:
             patch_app_run(app)
         app.url_map.add(Rule('/', endpoint='websocket', websocket=True))
         app.wsgi_app = WebSocketMiddleware(app.wsgi_app, self)
 
     def broadcast(self, message):
+        """
+        """
         log.debug('Broadcasting to %d clients', len(self.active_sockets))
         for socket in self.active_sockets:
             socket.send(message)
         return ''
 
     def on_open(self, fun):
+        """
+        """
         self._open_handler_registry.append(fun)
         return fun
 
     def on_message(self, fun_or_str, flags=0):
+        """
+        """
         if not isinstance(fun_or_str, str):
             self._message_handler_registry.append(fun_or_str)
             return fun_or_str
@@ -73,6 +89,8 @@ class WebSockets:
         return decorator
 
     def on_close(self, fun):
+        """
+        """
         self._close_handler_registry.append(fun)
         return fun
 
@@ -135,7 +153,12 @@ class WebSockets:
 
 
 class WebSocketApp(WebSocketApplication):
+    """
+    """
+
     def __init__(self, websocket, sockets_manager):
+        """
+        """
         super().__init__(websocket)
         self.sockets_manager = sockets_manager
 
@@ -150,12 +173,19 @@ class WebSocketApp(WebSocketApplication):
 
 
 class WebSocketMiddleware:
+    """
+    """
+
     def __init__(self, wsgi_app, sockets_manager, socket_app=WebSocketApp):
+        """
+        """
         self.wsgi_app = wsgi_app
         self.sockets_manager = sockets_manager
         self.socket_app = socket_app
 
     def __call__(self, environ, start_response):
+        """
+        """
         if 'wsgi.websocket' not in environ:
             return self.wsgi_app(environ, start_response)
         socket_app = self.socket_app(environ['wsgi.websocket'], self.sockets_manager)
@@ -173,29 +203,42 @@ to interface with the current websocket object in some way."""
 
 
 def has_socket_context():
+    """
+    """
     return _socket_ctx_stack.top is not None
 
 
-def get_websocket():
+def _get_websocket():
+    """
+    """
     top = _socket_ctx_stack.top
     if top is None:
         raise RuntimeError(_socket_ctx_err_msg)
     return top.websocket
 
 
-ws = LocalProxy(get_websocket)
+ws = LocalProxy(_get_websocket)
 
 
 class SocketContext:
+    """
+    """
+
     def __init__(self, websocket):
+        """
+        """
         self.websocket = websocket
         self._refcnt = 0
 
     def push(self):
+        """
+        """
         self._refcnt += 1
         _socket_ctx_stack.push(self)
 
     def pop(self, exc=_sentinel):
+        """
+        """
         try:
             self._refcnt -= 1
             if self._refcnt <= 0:
@@ -215,16 +258,18 @@ class SocketContext:
 
 def patch_app_run(app):
     """
-    This patches :py:meth:`~flask.Flask.run` to a version which does not directly fail using
+    This patches :meth:`flask.Flask.run` to a version which does not directly fail using
     WebSockets, to quickly test out Flask-Websockets.
-    It does not support all features of :py:meth:`~flask.Flask.run` and is not
+    It does not support all features of :meth:`flask.Flask.run` and is not
     recommended for production settings.
 
-    For an alternative, please see :py:func:`~flask_websockets.run`, which is similar
+    For an alternative, please see :func:`~flask_websockets.run`, which is similar
     but without the debugging capabilites and no reloading.
 
-    Thanks @gmyers18, who provided the basic code here:
+    Thanks `@gmyers18`_, who provided the basic code here:
     https://github.com/heroku-python/flask-sockets/issues/48#issuecomment-301060798
+
+    .. _`@gmyers18`: https://github.com/gmyers18
     """
     log.info('Patching app.run() to enable WebSockets.')
 
@@ -253,6 +298,8 @@ def patch_app_run(app):
 
 
 def run(app, host='', port=5000):
+    """
+    """
     log.info('Starting')
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler

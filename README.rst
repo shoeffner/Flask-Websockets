@@ -42,11 +42,11 @@ Features
 --------
 
 Flask-Websockets resulted from the need of a *raw* implementation of websockets to communicate with a Unity-WebGL app.
-There is a multitude of `Flask extenstions for websockets`_, but most of them require some sort of manual ``while True``-loops to handle requests.
+There is a multitude of `Flask extensions for websockets`_, but most of them require some sort of manual ``while True``-loops to handle requests.
 Flask-Websockets tries to follow Flask-patterns as close as possible, thus it has the following features:
 
-- :py:data:`~flask_websockets.ws` allows access to the websocket connection of the current context. It works similar to Flask's :py:data:`~flask.request`.
-- :py:meth:`~flask_websockets.WebSockets.on_message` is a powerful decorator to filter messages or catch all. The return value of functions decorated with :py:meth:`~flask_websockets.WebSockets.on_message` is sent as a reply, similar to `View functions`_. Though it has limitations, notably :py:data:`~flask.flash` and custom HTTP status codes do not work.
+- :data:`~flask_websockets.ws` allows access to the websocket connection of the current context. It works similar to Flask's :attr:`~flask.request`.
+- :meth:`~flask_websockets.WebSockets.on_message` is a powerful decorator to filter messages or catch all. The return value of functions decorated with :meth:`~flask_websockets.WebSockets.on_message` is sent as a reply, similar to `View functions`_. Note that it has limitations, notably :func:`~flask.flash` and custom HTTP status codes do not work.
 
 .. _Flask extensions for websockets: https://pypi.org/search/?q=Flask-Websockets
 .. _View functions: https://flask.palletsprojects.com/en/1.1.x/tutorial/views/
@@ -68,8 +68,8 @@ Thus, the recommended way to run it is as done above:
 
 Flask-Websockets does not have the following typical Flask-capabilities other Frameworks provide:
 
-- Blueprints
-- Cookie/Session handling
+- :ref:`Blueprints <flask:blueprints>`
+- :ref:`Cookie/Session handling <flask:sessions>`
 
 There is also a list of "known" issues, though not all are Flask-Websockets' fault:
 
@@ -131,7 +131,7 @@ To restrict this behavior, setup the app as follows: ``WebSockets(app, match_one
         import json
         return json.dumps({'message': message, 'reply': 'Reply!'})
 
-For long running tasks, it is possible to send status updates using the global :py:data:`~flask_websockets.ws`.
+For long running tasks, it is possible to send status updates using the global :data:`~flask_websockets.ws`.
 
 .. code:: python
 
@@ -145,7 +145,7 @@ For long running tasks, it is possible to send status updates using the global :
         ws.send('Work done')
 
 
-It is possible to use the :py:meth:`~flask_websockets.WebSockets.on_message` decorator to match (regex) patterns.
+It is possible to use the :meth:`~flask_websockets.WebSockets.on_message` decorator to match (regex) patterns.
 The patterns are compiled using the standard re_ module.
 
 .. _re: https://docs.python.org/3/library/re.html
@@ -157,7 +157,7 @@ The patterns are compiled using the standard re_ module.
         _, msg = message.split(' ', 1)
         return msg
 
-Similar to the :py:func:`~flask.has_app_context` and :py:func:`~flask.has_request_context`, Flask-Websockets comes with :py:func:`~flask_websockets.has_socket_context` to check whether a socket context is available.
+Similar to the :func:`flask.has_app_context` and :func:`flask.has_request_context`, Flask-Websockets comes with :func:`~flask_websockets.has_socket_context` to check whether a socket context is available.
 
 .. code:: python
 
@@ -175,7 +175,7 @@ Similar to the :py:func:`~flask.has_app_context` and :py:func:`~flask.has_reques
         return render_template('index.html')
 
 
-Using :py:func:`~flask.url_for` in templates works with the special rule ``websocket`` and supplying ``_external=True, _scheme='ws'``.
+Using :func:`~flask.url_for` in templates works with the special rule ``websocket`` and supplying ``_external=True, _scheme='ws'``.
 
 .. code:: javascript
 
@@ -206,14 +206,16 @@ Important: not "approved"
 -------------------------
 
 This is *no* approved extension (and thus, I didn't put it up on PyPI):
+
     0. No: Maintainer (I probably don't have the resources nor need)
     1. Yes: Name is Flask-Websockets
     2. Yes: MIT license
     3. Yes: API characteristics
-    4. Yes: I install it using `pip install -e .`
+    4. Yes: I install it using ``pip install -e .``
     5. No: No test suite
     6. Yes: Documentation_.
     7. Yes: Supports >= 3.6
+
 See also `Approved extensions`_.
 
 .. _Documentation: https://Flask-Websockets.readthedocs.io/en/latest/
