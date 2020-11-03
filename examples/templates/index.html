@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>Test application for flask-websockets</title>
+    <meta charset="utf8" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
+</head>
+<body>
+    <h1>Flask-Websockets example</h1>
+
+    <p>This website is an example for <a href="https://github.com/shoeffner/Flask-Websockets">Flask-Websockets</a>.
+    The code can be found in the <a href="https://github.com/shoeffner/Flask-Websockets/tree/master/examples">examples directory</a>.</p>
+    <p>Make sure to checkout the <a href="https://shoeffner.github.io/Flask-Websockets">Flask-Websockets documentation</a>.</p>
+
+    <form id="connect_form" method="post">
+        <input type="submit" value="Toggle connection" />
+    </form>
+
+    <form id="pingpong_form" method="post">
+        <input type="submit" value="Send Ping" />
+    </form>
+
+    <form id="broadcast_form" method="post" action="{{ url_for('broadcast') }}">
+        <label for="broadcast_form_message">Broadcast</label>
+        <input type="text" name="broadcast_form_message" value="This is a broadcast!" />
+        <input type="submit" value="Broadcast" />
+    </form>
+
+    <form id="echo_form">
+        <label for="echo_message">Echo</label>
+        <input type="text" id="echo_message" name="echo_message" value="Hello, I am an echo!" />
+        <input type="submit" value="Echo" />
+    </form>
+
+    <div id="log">
+    </div>
+
+    <script type="text/javascript">
+        function log_chat(who, message) {
+            var log = document.getElementById('log');
+            var entry = document.createElement('p');
+            entry.innerHTML = '<span class="' + who + '">' + who + ':</span> ' + message;
+            log.appendChild(entry);
+        }
+
+        var ws = null;
+        function init_ws() {
+            ws = new WebSocket("{{ url_for('websocket', _external=True, _scheme='ws') }}");
+            ws.onopen = function(evt) {
+                log_chat('system', 'WebSocket connected');
+            }
+            ws.onmessage = function(evt) {
+                log_chat('server', evt.data);
+            }
+            ws.onclose = function(evt) {
+                log_chat('system', 'WebSocket disconnected');
+                ws = null;
+            }
+            ws.onerror = function(error) {
+                log_chat('system', 'WebSocket error: ' + error.message);
+            }
+        }
+        init_ws();
+
+        function toggle_connection(evt) {
+            evt.preventDefault();
+            if (ws == null) {
+                init_ws();
+            } else {
+                ws.close();
+            }
+            return false;
+        }
+        var connect_form = document.getElementById('connect_form');
+        connect_form.addEventListener('submit', toggle_connection);
+
+        function ping(evt) {
+            evt.preventDefault();
+            if (ws != null) {
+                log_chat('browser', 'Ping');
+                ws.send('Ping');
+            } else {
+                log_chat('system', 'not connected');
+            }
+            return false;
+        }
+        var pp_form = document.getElementById('pingpong_form');
+        pp_form.addEventListener('submit', ping);
+
+        function broadcast(evt) {
+            evt.preventDefault();
+            log_chat('browser', 'Sending HTTP broadcast request');
+            fetch(evt.target.action, {
+                method:'POST',
+                body: new FormData(document.getElementById('broadcast_form'))
+            });
+            if (ws == null) {
+                log_chat('system', 'not connected');
+            }
+            return false;
+        }
+        var bc_form = document.getElementById('broadcast_form');
+        bc_form.addEventListener('submit', broadcast);
+
+        function echo(evt) {
+            evt.preventDefault();
+            var message = 'ECHO ' + document.getElementById('echo_message').value;
+            if (ws != null) {
+                log_chat('browser', message);
+                ws.send(message);
+            } else {
+                log_chat('system', 'not connected');
+            }
+            return false;
+        }
+        var echo_form = document.getElementById('echo_form');
+        echo_form.addEventListener('submit', echo);
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+body {
+    max-width: 40em;
+    font-family: verdana;
+}
+
+form {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    margin: 1em;
+    padding: 1em;
+    border: 1px solid dimgray;
+}
+
+input[type="submit"] {
+    grid-row-start: 2;
+    grid-column-start: 1;
+    grid-column-end: end;
+}
+
+div#log {
+    margin: 0 1em;
+    background: snow;
+}
+
+div#log p {
+    margin: 0;
+    padding: 0.5em 1em;
+}
+
+span.browser {
+    color: burlywood;
+}
+
+span.system {
+    color: dimgray;
+}
+
+span.server {
+    color: rebeccapurple;
+}
