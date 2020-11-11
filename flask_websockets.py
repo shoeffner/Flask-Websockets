@@ -190,7 +190,8 @@ class WebSocketMiddleware:
             return self.wsgi_app(environ, start_response)
         socket_app = self.socket_app(environ['wsgi.websocket'], self.sockets_manager)
         with SocketContext(environ['wsgi.websocket']):
-            socket_app.handle()
+            with self.wsgi_app.__self__.request_context(environ):
+                socket_app.handle()
         return []
 
 
