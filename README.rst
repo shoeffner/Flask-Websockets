@@ -128,8 +128,8 @@ To restrict this behavior, setup the app as follows: ``WebSockets(app, match_one
         # This raises an error
         # return {'message': message, 'reply': 'Reply!'}
         # Instead, use:
-        import json
-        return json.dumps({'message': message, 'reply': 'Reply!'})
+        from Flask import jsonify
+        return jsonify({'message': message, 'reply': 'Reply!'})
 
 For long running tasks, it is possible to send status updates using the global :data:`~flask_websockets.ws`.
 
