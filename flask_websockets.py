@@ -2,7 +2,6 @@
 Flask-Websockets is a Flask extension which enables Flask-style use of gevent-websockets.
 """
 import re
-import sys
 
 from werkzeug.local import LocalStack
 from werkzeug.local import LocalProxy
@@ -196,7 +195,6 @@ class WebSocketMiddleware:
 
 
 _socket_ctx_stack = LocalStack()
-_sentinel = object()
 _socket_ctx_err_msg = """Working outside of websocket context.
 
 This typically means that you attempted to use functionality that needed
@@ -229,24 +227,16 @@ class SocketContext:
         """
         """
         self.websocket = websocket
-        self._refcnt = 0
 
     def push(self):
         """
         """
-        self._refcnt += 1
         _socket_ctx_stack.push(self)
 
-    def pop(self, exc=_sentinel):
+    def pop(self, exc=None):
         """
         """
-        try:
-            self._refcnt -= 1
-            if self._refcnt <= 0:
-                if exc is _sentinel:
-                    exc = sys.exc_info()[1]
-        finally:
-            rv = _socket_ctx_stack.pop()
+        rv = _socket_ctx_stack.pop()
         assert rv is self, f"Popped wrong socket context.  ({rv!r} instead of {self!r})"
 
     def __exit__(self, exc_type, exc_value, tb):
