@@ -56,7 +56,7 @@ def broadcast():
 def send():
     message = request.form['client_form_message']
     if has_socket_context():
-        sockets.send(message)
+        ws.send(message)
     # Note that this is still an HTTP request, so we need a response
     return ''
 
