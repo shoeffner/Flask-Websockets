@@ -3,7 +3,7 @@ from flask_websockets import WebSockets, ws
 
 app = Flask(__name__)
 sockets = WebSockets(app, patch_app_run=True)
-# To match all only the first matching handler (pattern handlers before
+# To match only the first matching handler (pattern handlers before
 # catch-all), supply match_one=True
 # sockets = WebSockets(app, match_one=True, patch_app_run=True)
 
