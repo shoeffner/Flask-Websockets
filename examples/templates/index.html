@@ -27,6 +27,13 @@
         <input type="submit" value="Broadcast" />
     </form>
 
+    <form id="client_form" method="post" action="{{ url_for('send') }}">
+        <label for="client_form_message">HTTP to Websocket</label>
+        <input type="text" name="client_form_message" value="This is sent via HTTP and received via WS" />
+        <input type="submit" value="Send" />
+    </form>
+
+
     <form id="echo_form">
         <label for="echo_message">Echo</label>
         <input type="text" id="echo_message" name="echo_message" value="Hello, I am an echo!" />
@@ -103,6 +110,21 @@
         var bc_form = document.getElementById('broadcast_form');
         bc_form.addEventListener('submit', broadcast);
 
+        function send_client(evt) {
+            evt.preventDefault();
+            log_chat('browser', 'Sending HTTP send request');
+            fetch(evt.target.action, {
+                method:'POST',
+                body: new FormData(document.getElementById('client_form'))
+            });
+            if (ws == null) {
+                log_chat('system', 'not connected');
+            }
+            return false;
+        }
+        var c_form = document.getElementById('client_form');
+        c_form.addEventListener('submit', send_client);
+
         function echo(evt) {
             evt.preventDefault();
             var message = 'ECHO ' + document.getElementById('echo_message').value;
@@ -116,6 +138,7 @@
         }
         var echo_form = document.getElementById('echo_form');
         echo_form.addEventListener('submit', echo);
+
     </script>
 </body>
 </html>

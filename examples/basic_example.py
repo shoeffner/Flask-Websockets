@@ -1,7 +1,14 @@
-from flask import Flask, render_template, request
-from flask_websockets import WebSockets, ws
+from uuid import uuid4
+
+from flask import Flask, render_template, request, session
+from flask_websockets import WebSockets, ws, has_socket_context
 
 app = Flask(__name__)
+app.secret_key = b'96iGXSNCLYfU5SCU6pzn2hH87gFF4PUrgxl7V5uKLLE'
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE='Strict'
+)
 sockets = WebSockets(app, patch_app_run=True)
 # To match all only the first matching handler (pattern handlers before
 # catch-all), supply match_one=True
@@ -45,11 +52,22 @@ def broadcast():
     return sockets.broadcast(message)
 
 
+@app.route('/send', methods=['POST'])
+def send():
+    message = request.form['client_form_message']
+    if has_socket_context():
+        sockets.send(message)
+    # Note that this is still an HTTP request, so we need a response
+    return ''
+
+
 @app.route('/')
 def index():
     """
     Renders the index page.
     """
+    # Set some session value to allow HTTP -> WebSocket for one client
+    session['ws.ident'] = str(uuid4())
     return render_template('index.html')
 
 
