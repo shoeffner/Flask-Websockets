@@ -76,6 +76,8 @@ There is also a list of "known" issues, though not all are Flask-Websockets' fau
 - Logging is not properly supported (`gevent-websocket#16`_)
 - Reloading is currently not supported, this is essentially the same as for Flask-Sockets `flask-sockets#48`_
 - The websockets do not seem to work using ``wss://``, instead, ``ws://`` needs to be used.
+- While it is possible to have some cookie/session handling to identify clients accross connections (e.g. a website using HTTP and websocket), it only works with one open browser tab at the moment.
+  If a second tab is opened, it takes over control over the websocket.
 
 .. _gevent-websocket#16: https://gitlab.com/noppo/gevent-websocket/-/issues/16
 .. _flask-sockets#48: https://github.com/heroku-python/flask-sockets/issues/48
@@ -180,6 +182,36 @@ Using :func:`~flask.url_for` in templates works with the special rule ``websocke
 .. code:: javascript
 
     ws = new WebSocket("{{ url_for('websocket', _external=True, _scheme='ws') }}");
+
+
+To handle cross-connection identification, you must set a session cookie.
+This requires a number of tweaks, mostly you MUST set a secret key, and you should set a cookie SameSite value.
+
+.. code:: python
+
+    from uuid import uuid4
+    from flask import Flask, session, render_template
+    from flask_websockets import WebSockets, ws, has_socket_context
+
+    app = Flask(__name__)
+    app.secret_key = b'secretkey'
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='Strict'
+    )
+    sockets = WebSockets(app, patch_app_run=True)
+
+    @app.route('/reply_via_ws')
+    def send():
+        if has_socket_context():
+            ws.send('A reply via websocket')
+    # Note that this is still an HTTP request, so we need a response
+    return 'A reply via HTTP'
+
+    @app.route('/')
+    def index():
+        session['ws.identifier'] = str(uuid4())
+        return render_template('index.html')
 
 
 Alternatives
