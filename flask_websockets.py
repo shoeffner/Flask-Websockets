@@ -31,6 +31,30 @@ def create_logger():
 log = create_logger()
 log.debug('Using Flask-Websockets version %s', __version__)
 
+_cookie_sockets = dict()
+
+
+def add_cookie_websocket(websocket):
+    cookie = websocket.environ.get('HTTP_COOKIE')
+    if cookie is not None:
+        _cookie_sockets[cookie] = websocket
+
+
+def remove_cookie_websocket(websocket):
+    for cookie, socket in _cookie_sockets.items():
+        if socket is websocket:
+            break
+    else:
+        return
+    _cookie_sockets.pop(cookie)
+
+
+def get_websocket_by_cookie(environ):
+    cookie = environ.get('HTTP_COOKIE')
+    if cookie is not None:
+        return _cookie_sockets.get(cookie, None)
+    return None
+
 
 class WebSockets:
     """
@@ -144,6 +168,7 @@ class WebSockets:
         for handler in self._close_handler_registry:
             handler(*args, **kwargs)
         self._unregister_socket(websocket)
+        remove_cookie_websocket(websocket)
 
     def _send_response(self, websocket, response):
         if response is None:
@@ -186,19 +211,42 @@ class WebSocketMiddleware:
         """
         """
         if 'wsgi.websocket' not in environ:
-            return self.wsgi_app(environ, start_response)
+            return self.handle_wsgi_app(environ, start_response)
+        return self.handle_websocket(environ, start_response)
+
+    def handle_websocket(self, environ, start_response):
+        add_cookie_websocket(environ['wsgi.websocket'])
         socket_app = self.socket_app(environ['wsgi.websocket'], self.sockets_manager)
         with SocketContext(environ['wsgi.websocket']):
             with self.wsgi_app.__self__.request_context(environ):
                 socket_app.handle()
         return []
 
+    def handle_wsgi_app(self, environ, start_response):
+        wsgi_websocket = get_websocket_by_cookie(environ)
+        if wsgi_websocket is not None:
+            with SocketContext(wsgi_websocket):
+                return self.wsgi_app(environ, start_response)
+        return self.wsgi_app(environ, start_response)
+
 
 _socket_ctx_stack = LocalStack()
 _socket_ctx_err_msg = """Working outside of websocket context.
 
 This typically means that you attempted to use functionality that needed
-to interface with the current websocket object in some way."""
+to interface with the current websocket object in some way.
+
+If you want to reply to an HTTP request using a websocket of the same client,
+first make sure your websocket is connected.
+You must also set a session cookie so that it is possible to identify the
+client. In your first response set a session value such as:
+    session['ws.ident'] = 'my_unique_identifier'
+and consider the SameSite strategies and security considerations mentioned
+here: https://flask.palletsprojects.com/en/1.1.x/security/#set-cookie-options
+
+To check if you are in a proper websocket context (or a socket is connected
+where you expect it to be), you can use flask_websockets.has_socket_context().
+"""
 
 
 def has_socket_context():
